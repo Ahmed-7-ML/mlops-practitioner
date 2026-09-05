@@ -220,3 +220,5 @@ __marimo__/
 *.tfstate
 __pycache__
 *.pkl
+notes/
+notes.txt
