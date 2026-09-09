@@ -2,15 +2,12 @@
 
 from typing import Tuple
 import pandas as pd
-import logging
-from prodml.config import Config
-from sklearn.model_selection import train_test_split
+from prodml.logging_conf import setup_logging
 
-config = Config()
-logger = logging.getLogger(__name__)
+logger = setup_logging("prodml.data")
 
 
-def load_clean_data(config: Config = config) -> pd.DataFrame:
+def load_data(file_path: str) -> pd.DataFrame:
     """
     Load and clean the data from the specified path in the configuration.
 
@@ -20,17 +17,23 @@ def load_clean_data(config: Config = config) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned DataFrame.
     """
-    logger.info(f"Loading Parquet File from: {config.data_path}")
-    df = pd.read_parquet(config.data_path)
+    # 1. Load the data
+    df = pd.read_parquet(file_path, low_memory=False)
 
-    # Calculate trip duration in minutes
+    # 2. Calculate trip duration in minutes
     df["trip_duration"] = (
         df["lpep_dropoff_datetime"] - df["lpep_pickup_datetime"]
     ).dt.total_seconds() / 60
 
-    # Filter Duration and Distance
+    # 3. Filter out trips with duration less than 1 minute or greater than 60 minutes
+    # Filter out trips with distance less than or equal to 0
     df = df[(df["trip_duration"] >= 1) & (df["trip_duration"] <= 60)]
     df = df[df["trip_distance"] > 0]
+
+    # 4. Create categorical PU_DO feature
+    categorincal_features = ["PULocationID", "DOLocationID"]
+    df[categorincal_features] = df[categorincal_features].astype(str)
+    df["PU_DO"] = df["PULocationID"] + "_" + df["DOLocationID"]
 
     # Drop Unnecessary Columns
     df = df.drop(columns=["lpep_pickup_datetime", "lpep_dropoff_datetime", "ehail_fee"])
@@ -56,7 +59,7 @@ def inspect_data(df: pd.DataFrame) -> None:
 
 
 def split_data(
-    df: pd.DataFrame, config: Config = config
+    df: pd.DataFrame, train_size: float = 0.8
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Split the DataFrame into training and validation sets.
@@ -68,7 +71,7 @@ def split_data(
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: Training and validation DataFrames.
     """
-    train_df, val_df = train_test_split(
-        df, test_size=config.test_size, random_state=config.random_state
-    )
+    cutoff = int(len(df) * train_size)
+    train_df = df.iloc[:cutoff]
+    val_df = df.iloc[cutoff:]
     return train_df, val_df
