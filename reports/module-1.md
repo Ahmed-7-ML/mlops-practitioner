@@ -2,21 +2,13 @@
 
 ## Baseline Results
 
-**Chosen Model:** Random Forest
+**Chosen Model:** Linear Regression
 
 | Metric | Value |
 |--------|-------|
-| RMSE   | 6.11  |
-| MAE    | 4.03  |
-| R²     | 0.54  |
-
-**Linear Regression (for comparison):**
-
-| Metric | Value |
-|--------|-------|
-| RMSE   | 7.03  |
-| MAE    | 4.90  |
-| R²     | 0.39  |
+| RMSE   | 4.44  |
+| MAE    | 2.98  |
+| R²     | 0.76  |
 
 ---
 

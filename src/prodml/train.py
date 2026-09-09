@@ -86,6 +86,7 @@ def train_evaluate_model(model_name: str = "Linear Regression") -> None:
 
     num_features = len(dv.get_feature_names_out())
     export_to_onnx(model, num_features)
+    logger.info(f"[7]Model exported to ONNX format at {config.onnx_model_path}")
 
     logger.info("Training Complete.")
 

@@ -1,4 +1,3 @@
-import logging
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -8,13 +7,12 @@ import onnxruntime as ort
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 
-from prodml.config import Config
+from prodml.config import config
 from prodml.data import load_data, split_data
-from prodml.features import engineer_features
 from prodml.logging_conf import setup_logging
 from prodml.predict import DurationPredictor
 
-logger = logging.getLogger(__name__)
+logger = setup_logging("prodml.export")
 
 
 def export_to_onnx(
@@ -31,7 +29,7 @@ def export_to_onnx(
     with open(onnx_path, "wb") as f:
         f.write(onnx_model.SerializeToString())
 
-    logger.info(f"ONNX model saved to {onnx_path}")
+    logger.info("Exported ONNX model", extra={"extra": {"path": onnx_path}})
 
 
 def benchmark_latency(
@@ -57,28 +55,21 @@ def run_parity_and_benchmark(
     n_samples: int = 500, atol: float = 1e-4, n_runs: int = 30
 ) -> dict[str, Any]:
     """Compare pickle vs ONNX predictions and and measure latency (mean + p95)."""
-    setup_logging()
-    config = Config()
     logger.info("Starting parity check and benchmark")
 
     # 1. Load data
-    df = load_data(config)
-    _, val_df = split_data(df, config)
+    df = load_data(config.data_path)
+    _, val_df = split_data(df, train_size=config.train_size)
     sample_df = val_df.head(n_samples)
 
     # 2. Load pickle model
-    predictor = DurationPredictor().load_model()
-    X, _ = engineer_features(sample_df, dv=predictor.dv, fit=False)
-    X = X.astype(np.float32)
+    predictor = DurationPredictor().load_pkl_model()
+    X = predictor._prepare_X(sample_df).astype(np.float32)
 
-    # 3. Export to ONNX
-    onnx_path = config.onnx_model_path
-    export_to_onnx(predictor.model, n_features=X.shape[1], onnx_path=onnx_path)
-
-    # 4. Parity check (single run)
+    # 3. Parity check (single run)
     pred_pkl = predictor.model.predict(X)
 
-    session = ort.InferenceSession(onnx_path)
+    session = ort.InferenceSession(config.onnx_model_path)
     input_name = session.get_inputs()[0].name
     pred_onnx = session.run(None, {input_name: X})[0].ravel()
 
@@ -88,7 +79,7 @@ def run_parity_and_benchmark(
     logger.info(
         "Parity check",
         extra={
-            "extra_data": {
+            "extra": {
                 "max_diff": round(max_diff, 6),
                 "allclose": is_close,
                 "atol": atol,
@@ -101,7 +92,7 @@ def run_parity_and_benchmark(
             f"Predictions differ by more than {atol}. Max diff = {max_diff}"
         )
 
-    # 5. Benchmark (mean + median + p95 + p99)
+    # 4. Benchmark (mean + median + p95 + p99)
     def pkl_predict(data: np.ndarray) -> np.ndarray:
         return predictor.model.predict(data)
 
@@ -124,7 +115,7 @@ def run_parity_and_benchmark(
         "onnx_p99_ms": onnx_stats["p99_ms"],
     }
 
-    logger.info("Benchmark results", extra={"extra_data": results})
+    logger.info("Benchmark results", extra={"extra": results})
     return results
 
 
