@@ -3,6 +3,7 @@
 from typing import Tuple
 import pandas as pd
 from prodml.logging_conf import setup_logging
+from prodml.config import config
 
 logger = setup_logging("prodml.data")
 
@@ -10,15 +11,11 @@ logger = setup_logging("prodml.data")
 def load_data(file_path: str) -> pd.DataFrame:
     """
     Load and clean the data from the specified path in the configuration.
-
-    Args:
-        config (Config): Configuration object containing data path.
-
     Returns:
         pd.DataFrame: Cleaned DataFrame.
     """
     # 1. Load the data
-    df = pd.read_parquet(file_path)
+    df = pd.read_parquet(config.data_path)
 
     # 2. Calculate trip duration in minutes
     df["trip_duration"] = (

@@ -10,6 +10,7 @@ class Config(BaseSettings):
 
     # Target Column
     target_column: str = "trip_duration"
+    train_size: float = 0.8
 
     # Ports
     api_port: int = 8000

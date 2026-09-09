@@ -3,7 +3,7 @@
 import pandas as pd
 from typing import Tuple
 from sklearn.feature_extraction import DictVectorizer
-from prodml.config import Config
+from prodml.config import config
 
 
 def engineer_features(df_train: pd.DataFrame, df_val: pd.DataFrame) -> Tuple:
@@ -13,7 +13,7 @@ def engineer_features(df_train: pd.DataFrame, df_val: pd.DataFrame) -> Tuple:
     """
     categorical = ["PU_DO"]
     numerical = ["trip_distance", "passenger_count"]
-    target_column = Config.target_column
+    target_column = config.target_column
     dv = DictVectorizer(sparse=False)
 
     train_dicts = df_train[categorical + numerical].to_dict(orient="records")

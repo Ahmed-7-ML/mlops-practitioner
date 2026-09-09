@@ -34,7 +34,7 @@ def train_evaluate_model(model_name: str = "Linear Regression") -> None:
     inspect_data(df)
 
     # 2. Split Data into Train and Test Sets
-    df_train, df_val = split_data(df, config)
+    df_train, df_val = split_data(df, train_size=config.train_size)
     logger.info(
         "[2]Split data into train and validation sets",
         extra={"extra": {"train_rows": len(df_train), "val_rows": len(df_val)}},
@@ -46,8 +46,8 @@ def train_evaluate_model(model_name: str = "Linear Regression") -> None:
         "[3]Engineered features",
         extra={
             "extra": {
-                "train_features": len(X_train.columns),
-                "val_features": len(X_val.columns),
+                "train_features": X_train.shape[1],
+                "val_features": X_val.shape[1],
             }
         },
     )
