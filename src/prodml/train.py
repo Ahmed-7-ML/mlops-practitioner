@@ -9,7 +9,7 @@ from prodml.data import load_data, inspect_data, split_data
 from prodml.features import engineer_features
 from prodml.utils import timed
 from prodml.config import Config
-from prodml.export import export_onnx
+from prodml.export import export_to_onnx
 
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -86,7 +86,7 @@ def train_evaluate_model(model_name: str = "Linear Regression") -> None:
     logger.info(f"[6]Model saved to {config.pkl_model_path}")
 
     num_features = len(dv.get_feature_names_out())
-    export_onnx(model, num_features)
+    export_to_onnx(model, num_features)
 
     logger.info("Training Complete.")
 

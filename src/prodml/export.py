@@ -9,7 +9,7 @@ from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 
 from prodml.config import Config
-from prodml.data import load_clean_data, split_data
+from prodml.data import load_data, split_data
 from prodml.features import engineer_features
 from prodml.logging_conf import setup_logging
 from prodml.predict import DurationPredictor
@@ -62,7 +62,7 @@ def run_parity_and_benchmark(
     logger.info("Starting parity check and benchmark")
 
     # 1. Load data
-    df = load_clean_data(config)
+    df = load_data(config)
     _, val_df = split_data(df, config)
     sample_df = val_df.head(n_samples)
 
