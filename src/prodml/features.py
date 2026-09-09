@@ -1,30 +1,29 @@
 # Feature Engineering
 
 import pandas as pd
-from typing import List
+from typing import List, Tuple
 from sklearn.feature_extraction import DictVectorizer
+from prodml.config import Config
 
 categorical_features: List[str] = ["PULocationID", "DOLocationID", "store_and_fwd_flag"]
 
 
-def engineer_features(
-    df: pd.DataFrame, dv: DictVectorizer = None, fit: bool = False
-) -> (pd.DataFrame, DictVectorizer):
+def engineer_features(df_train: pd.DataFrame, df_val: pd.DataFrame) -> Tuple:
     """
     Transform Categorical Features using DictVectorizer.
-    Returns (X, dv).
+    Returns (X_train, X_val, y_train, y_val, dv).
     """
-    # Take a copy of the DataFrame to avoid modifying the original
-    df = df.copy()
+    categorical = ["PU_DO"]
+    numerical = ["trip_distance", "passenger_count"]
+    target_column = Config.target_column
+    dv = DictVectorizer(sparse=False)
 
-    df[categorical_features] = df[categorical_features].astype(str)
-    dicts = df[categorical_features].to_dict(orient="records")
+    train_dicts = df_train[categorical + numerical].to_dict(orient="records")
+    X_train = dv.fit_transform(train_dicts)
 
-    if fit:
-        dv = DictVectorizer(sparse=False)
-        X = dv.fit_transform(dicts)
-    else:
-        if dv is None:
-            raise ValueError("DictVectorizer must be provided when fit=False.")
-        X = dv.transform(dicts)
-    return X, dv
+    val_dicts = df_val[categorical + numerical].to_dict(orient="records")
+    X_val = dv.transform(val_dicts)
+
+    y_train, y_val = df_train[target_column].values, df_val[target_column].values
+
+    return X_train, X_val, y_train, y_val, dv
