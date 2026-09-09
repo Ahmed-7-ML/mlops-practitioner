@@ -37,3 +37,22 @@ mlops-practitioner/
     ...
     └── module-5.md
 ```
+
+## Development Workflow
+
+```bash
+# 1. Install (editable + dev dependencies)
+uv pip install -e ".[dev]"
+
+# 2. Lint
+ruff check src tests && black --check src tests
+
+# 3. Test
+pytest -v --cov=src/prodml --cov-report=term-missing
+
+# 4. Train
+python -m prodml.train
+
+# 5. Serve (later in Module 3)
+uvicorn prodml.api.main:app --reload --port 8000
+```

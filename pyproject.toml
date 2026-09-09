@@ -1,25 +1,41 @@
 [project]
-name = "mlops-practitioner"
-version = "1.0.0"
-description = "Add your description here"
+name = "prodml"
+version = "0.1.0"
+description = "MLOps Practitioner - From notebook to production"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "ipykernel>=7.3.0",
-    "jupyter>=1.1.1",
-    "matplotlib>=3.11.1",
-    "pandas>=3.0.5",
-    "pyarrow>=25.0.1",
-    "scikit-learn>=1.9.0",
-    "seaborn>=0.13.2",
+    "scikit-learn",
+    "pandas",
+    "pyarrow",
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "pydantic-settings",
+    "joblib",
 ]
 
-[project.optional.dependencies]
-dev = []
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "black",
+    "mypy",
+    "httpx",
+    "pre-commit",
+    "jupyter",
+    "ipykernel",
+    "matplotlib",
+    "seaborn",
+]
 
 [project.scripts]
 prodml-train = "prodml.train:main"
 
 [build-system]
-requires = [""]
-build-backend = ""
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
