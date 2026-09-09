@@ -6,7 +6,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
-from prodml.api.schemas import BatchTripInput, BatchTripResponse, TripInput, TripOutput
+from prodml.api.schemas import BatchTripInput, BatchTripOutput, TripInput, TripOutput
 from prodml.predict import DurationPredictor
 from prodml.logging_conf import correlation_id_var, setup_logging
 
@@ -130,10 +130,10 @@ def predict(trip: TripInput) -> TripOutput:
     )
 
 
-@app.post("/predict/batch", response_model=BatchTripResponse)
+@app.post("/predict/batch", response_model=BatchTripOutput)
 def predict_batch(
     batch_input_data: BatchTripInput,
-) -> BatchTripResponse:
+) -> BatchTripOutput:
     if predictor is None:
         raise HTTPException(status_code=500, detail="Model unavailable")
 
@@ -163,7 +163,7 @@ def predict_batch(
             "batch_size": len(batch_input_data.inputs),
         },
     )
-    return BatchTripResponse(
+    return BatchTripOutput(
         predictions=predictions,
         latency_ms=total_latency,
         model_version="1.0.0",
