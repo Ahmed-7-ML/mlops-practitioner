@@ -47,6 +47,7 @@ class PredictionRequest(BaseModel):
     # payment_type
     # congestion_surcharge
     # cbd_congestion_fee
+    # correlation_id
 
 
 class PredictionResponse(BaseModel):
