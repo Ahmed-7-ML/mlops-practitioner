@@ -3,9 +3,9 @@
 import time
 import functools
 from typing import Callable, Any
-import logging
+from prodml.logging_conf import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging("prodml.utils")
 
 
 def timed(func: Callable) -> Callable:
@@ -24,10 +24,15 @@ def timed(func: Callable) -> Callable:
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
-        elapsed_time = end_time - start_time
+        elapsed_time = round(end_time - start_time, 4)
         logger.info(
             f"⏱️ Function '{func.__name__}' executed",
-            extra={"extra_data": {"duration_sec": round(elapsed_time, 4)}},
+            extra={
+                "extra_data": {
+                    "function_name": func.__name__,
+                    "duration_sec": round(elapsed_time, 4),
+                }
+            },
         )
         return result
 

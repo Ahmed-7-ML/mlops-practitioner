@@ -20,11 +20,11 @@ import sys
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any
-from uuid import uuid4
+# from uuid import uuid4
 
 # ---> Context Variable for Correlation ID
 # Define a context variable to hold the correlation ID for each request
-correlation_id_var: ContextVar[str] = ContextVar("correlation_id", default=None)
+correlation_id_var: ContextVar[str] = ContextVar("correlation_id", default="-")
 
 
 class JSONFormatter(logging.Formatter):
@@ -40,59 +40,61 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_record: dict[str, Any] = {
+            # self.formatTime(record, self.datefmt)
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
             "correlation_id": correlation_id_var.get(),
         }
-        if hasattr(record, "extra_data"):
-            log_record.update(record.extra_data)
+        if hasattr(record, "extra") and isinstance(record.extra, dict):
+            log_record.update(record.extra)
 
         return json.dumps(log_record, ensure_ascii=False)
 
 
-def setup_logging(level: int = logging.INFO) -> None:
+def setup_logging(name: str) -> None:
     """
     Set up logging configuration with JSON formatting.
     Args:
         level: Logging level (default: INFO)
     """
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(JSONFormatter())
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(JSONFormatter())
+        logger.handlers.clear()  # Clear existing handlers
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = (
+            False  # Prevent log messages from being propagated to the root logger
+        )
 
-    root = logging.getLogger()
-    root.handlers.clear()  # Clear existing handlers
-    root.addHandler(handler)
-    root.setLevel(level)
-
-    # Reduce noise from third-party libraries
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-    logging.getLogger("uvicorn.error").setLevel(logging.INFO)
-
-
-def get_correlation_id() -> str:
-    """
-    Retrieve the current correlation ID from the context variable.
-    If not set, generate a new UUID4 and set it in the context.
-    Returns:
-        The current correlation ID as a string.
-    """
-    correlation_id = correlation_id_var.get()
-    if not correlation_id:
-        correlation_id = str(uuid4())
-        correlation_id_var.set(correlation_id)
-    return correlation_id
+    return logger
 
 
-def set_correlation_id(correlation_id: str) -> str:
-    """
-    Set the correlation ID in the context variable.
-    Args:
-        correlation_id: The correlation ID to set.
-    Returns:
-        The correlation ID that was set.
-    """
-    correlation_id = correlation_id or str(uuid4())
-    correlation_id_var.set(correlation_id)
-    return correlation_id
+# def get_correlation_id() -> str:
+#     """
+#     Retrieve the current correlation ID from the context variable.
+#     If not set, generate a new UUID4 and set it in the context.
+#     Returns:
+#         The current correlation ID as a string.
+#     """
+#     correlation_id = correlation_id_var.get()
+#     if not correlation_id:
+#         correlation_id = str(uuid4())
+#         correlation_id_var.set(correlation_id)
+#     return correlation_id
+
+
+# def set_correlation_id(correlation_id: str) -> str:
+#     """
+#     Set the correlation ID in the context variable.
+#     Args:
+#         correlation_id: The correlation ID to set.
+#     Returns:
+#         The correlation ID that was set.
+#     """
+#     correlation_id = correlation_id or str(uuid4())
+#     correlation_id_var.set(correlation_id)
+#     return correlation_id
