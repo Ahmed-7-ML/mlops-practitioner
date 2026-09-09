@@ -1,11 +1,9 @@
 # Feature Engineering
 
 import pandas as pd
-from typing import List, Tuple
+from typing import Tuple
 from sklearn.feature_extraction import DictVectorizer
 from prodml.config import Config
-
-categorical_features: List[str] = ["PULocationID", "DOLocationID", "store_and_fwd_flag"]
 
 
 def engineer_features(df_train: pd.DataFrame, df_val: pd.DataFrame) -> Tuple:
