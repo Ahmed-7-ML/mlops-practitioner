@@ -28,7 +28,7 @@ def timed(func: Callable) -> Callable:
         logger.info(
             f"⏱️ Function '{func.__name__}' executed",
             extra={
-                "extra_data": {
+                "extra": {
                     "function_name": func.__name__,
                     "duration_sec": round(elapsed_time, 4),
                 }

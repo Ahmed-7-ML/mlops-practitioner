@@ -23,7 +23,6 @@ def train_evaluate_model(model_name: str = "Linear Regression") -> None:
     """
     Train a machine learning model.
     """
-    setup_logging()
     logger.info(f"Starting {model_name} training pipeline")
 
     # 1. Load Clean Data and Inspect

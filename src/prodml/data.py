@@ -18,7 +18,7 @@ def load_data(file_path: str) -> pd.DataFrame:
         pd.DataFrame: Cleaned DataFrame.
     """
     # 1. Load the data
-    df = pd.read_parquet(file_path, low_memory=False)
+    df = pd.read_parquet(file_path)
 
     # 2. Calculate trip duration in minutes
     df["trip_duration"] = (
