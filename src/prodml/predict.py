@@ -23,6 +23,15 @@ class DurationPredictor:
         self.model = None
         self.dv = None
 
+    def get_metadata(self):
+        """Return metadata about the model, including version and feature names."""
+        return {
+            "model_name": "DurationPredictor",
+            "model_version": "1.0.0",
+            "categorical_features": CATEGORICAL,
+            "numerical_features": NUMERICAL,
+        }
+
     def load_pkl_model(self) -> "DurationPredictor":
         """
         Load the trained model and DictVectorizer from the specified path.
