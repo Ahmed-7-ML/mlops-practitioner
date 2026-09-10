@@ -56,3 +56,27 @@ python -m prodml.train
 # 5. Serve (later in Module 3)
 uvicorn prodml.api.main:app --reload --port 8000
 ```
+
+## Test FastAPI Endpoints
+```
+# Health
+curl -s http://localhost:8000/health | jq
+
+# Metadata
+curl -s http://localhost:8000/metadata | jq
+
+# Single predict
+curl -s -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"PULocationID":"66","DOLocationID":"262","trip_distance":8.07,"passenger_count":1.0}' | jq
+
+# Batch predict
+curl -s -X POST http://localhost:8000/predict/batch \
+  -H "Content-Type: application/json" \
+  -d '{"instances":[{"PULocationID":"66","DOLocationID":"262","trip_distance":8.07,"passenger_count":1.0},{"PULocationID":"198","DOLocationID":"56","trip_distance":4.08,"passenger_count":1.0}]}' | jq
+
+# Validation error (should return 422)
+curl -s -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"PULocationID":"66","DOLocationID":"262","trip_distance":-5}' | jq
+```
