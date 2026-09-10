@@ -7,7 +7,12 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
-from prodml.api.schemas import BatchTripInput, BatchTripOutput, TripInput, TripOutput
+from prodml.api.schemas import (
+    BatchPredictionRequest,
+    BatchPredictionResponse,
+    PredictionRequest,
+    PredictionResponse,
+)
 from prodml.predict import DurationPredictor
 from prodml.logging_conf import correlation_id_var, setup_logging
 
@@ -38,9 +43,10 @@ app = FastAPI(
     title="ProdML API",
     description="ProdML API for managing production machine learning models.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
-# predictor = DurationPredictor().load_model()
+# predictor = DurationPredictor().load_pkl_model()
 
 # # Load the model once at startup using FastAPI's lifespan context manager — never inside the request handler.
 # # Loading per-request is the most common beginner mistake and it costs 100× in latency.
@@ -96,18 +102,14 @@ def metadata():
     return predictor.get_metadata()
 
 
-@app.post("/predict", response_model=TripOutput)
-def predict(trip: TripInput) -> TripOutput:
+@app.post("/predict", response_model=PredictionResponse)
+def predict(trip: PredictionRequest) -> PredictionResponse:
     """
     Accepts input data and returns predictions from the model.
     """
     if predictor is None:
-        raise HTTPException(status_code=500, detail="Model unavailable")
-
-    if trip.trip_distance > 100:
-        logger.warning(
-            "trip_distance > 100", extra={"extra": {"distance": trip.trip_distance}}
-        )
+        logger.error("Model not loaded")
+        return JSONResponse(status_code=503, content={"detail": "Model not loaded"})
 
     features = {
         "PU_DO": f"{trip.PULocationID}_{trip.DOLocationID}",
@@ -124,7 +126,7 @@ def predict(trip: TripInput) -> TripOutput:
         "prediction served with latency",
         extra={"extra": {"latency_sec": latency, "prediction": prediction}},
     )
-    return TripOutput(
+    return PredictionResponse(
         prediction=prediction,
         latency_ms=latency,
         model_version="1.0.0",
@@ -132,41 +134,38 @@ def predict(trip: TripInput) -> TripOutput:
     )
 
 
-@app.post("/predict/batch", response_model=BatchTripOutput)
+@app.post("/predict/batch", response_model=BatchPredictionResponse)
 def predict_batch(
-    batch_input_data: BatchTripInput,
-) -> BatchTripOutput:
+    batch_input_data: BatchPredictionRequest,
+) -> BatchPredictionResponse:
     if predictor is None:
-        raise HTTPException(status_code=500, detail="Model unavailable")
+        logger.error("Model not loaded")
+        return JSONResponse(status_code=503, content={"detail": "Model not loaded"})
 
     predictions = []
     start = time.perf_counter()
-    for trip in batch_input_data.inputs:
-        features = {
-            "PU_DO": f"{trip.PULocationID}_{trip.DOLocationID}",
-            "trip_distance": trip.trip_distance,
-            "passenger_count": trip.passenger_count,
-        }
-        logger.debug("feature vector", extra={"extra": {"features": features}})
-        prediction = predictor.predict_one(features)
-        predictions.append(
-            TripOutput(
-                prediction=prediction,
-                latency_ms=0,  # Individual latency not tracked in batch
-                model_version="1.0.0",
-                correlation_id=correlation_id_var.get(),
-            )
-        )
+    features_list = [input_data.model_dump() for input_data in batch_input_data.inputs]
+    predictions = predictor.predict_batch(features_list)
     total_latency = (time.perf_counter() - start) * 1000
     logger.info(
         "batch prediction served with total latency",
         extra={
-            "extra": {"total_latency_sec": total_latency},
-            "batch_size": len(batch_input_data.inputs),
+            "extra": {
+                "total_latency_sec": total_latency,
+                "batch_size": len(batch_input_data.inputs),
+            },
         },
     )
-    return BatchTripOutput(
-        predictions=predictions,
+    return BatchPredictionResponse(
+        predictions=[
+            PredictionResponse(
+                prediction=pred,
+                latency_ms=total_latency / len(batch_input_data.inputs),
+                model_version="1.0.0",
+                correlation_id=correlation_id_var.get(),
+            )
+            for pred in predictions
+        ],
         latency_ms=total_latency,
         model_version="1.0.0",
         correlation_id=correlation_id_var.get(),
