@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
+
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -22,9 +23,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up: Loading model artifact into memory...")
 
     try:
-        predictor = DurationPredictor().load_model()
+        predictor = DurationPredictor().load_pkl_model()
     except Exception as e:
         logger.error("Startup model load failure", extra={"extra": {"error": str(e)}})
+        raise e
 
     yield
     # Cleanup code if needed
